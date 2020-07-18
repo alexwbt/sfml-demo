@@ -1,24 +1,33 @@
-#include <SFML/Graphics.hpp>
+#include "maze.h"
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(800, 600), "SFML works!");
-    sf::CircleShape shape(100.f);
-    shape.setFillColor(sf::Color::Green);
+    sf::RenderWindow window(sf::VideoMode(800, 600), "SFML Maze Demo");
+
+    Maze maze(50);
 
     while (window.isOpen())
     {
         sf::Event event;
         while (window.pollEvent(event))
         {
-            if (event.type == sf::Event::Closed)
+            switch (event.type)
+            {
+            case sf::Event::Closed:
                 window.close();
+                break;
+            case sf::Event::Resized:
+                window.setView(sf::View(sf::FloatRect(0.0f, 0.0f, (float)event.size.width, (float)event.size.height)));
+                break;
+            }
         }
 
+        maze.update();
+
         window.clear();
-        window.draw(shape);
+
+        maze.render(&window);
+
         window.display();
     }
-
-    return 0;
 }
