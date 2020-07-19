@@ -20,8 +20,8 @@ Maze::Maze(int size)
         }
     }
 
-    offsetX = -GRID_SIZE * size / 2.0f;
-    offsetY = -GRID_SIZE * size / 2.0f;
+    offsetX = -size / 2.0f;
+    offsetY = -size / 2.0f;
 
     // generate(rand() % size, rand() % size);
     generate2();
@@ -86,7 +86,7 @@ void Maze::generate2()
     int y = rand() % size;
     int distance = 0;
     while (true) {
-        maze[x][y].value = ++distance;
+        maze[x][y].value = --distance;
         bool traceBack = false;
         bool d[4] = { false, false, false, false };
         while (!traceBack) {
@@ -111,10 +111,10 @@ void Maze::generate2()
             for (int i = 0; i < 4; i++) {
                 const int nextX = x + FOUR[i][0];
                 const int nextY = y + FOUR[i][1];
-                if (!outOfBound(nextX, nextY) && !maze[x][y].walls[i] && maze[nextX][nextY].value != 0 && maze[nextX][nextY].value < maze[x][y].value) {
+                if (!outOfBound(nextX, nextY) && !maze[x][y].walls[i] && maze[nextX][nextY].value != 0 && maze[nextX][nextY].value > maze[x][y].value) {
                     x = nextX;
                     y = nextY;
-                    distance = maze[nextX][nextY].value - 1;
+                    distance = maze[nextX][nextY].value + 1;
                     break;
                 }
                 if (i >= 3) {
@@ -125,14 +125,82 @@ void Maze::generate2()
     }
 }
 
+void Maze::path()
+{
+    if (outOfBound(startX, startY) || outOfBound(endX, endY))
+        return;
+
+    for (int x = 0; x < size; x++)
+    {
+        for (int y = 0; y < size; y++)
+        {
+            maze[x][y].value = 0;
+        }
+    }
+
+    const int valueDir = -1;
+    int value = valueDir;
+    maze[startX][startY].value = value;
+    while (true) {
+        for (int x = 0; x < size; x++) {
+            for (int y = 0; y < size; y++) {
+                if (maze[x][y].value == value) {
+                    if (x == endX && y == endY) {
+                        // const v = Math.abs(value);
+                        // if (v > 200) {
+                        //     const s = Math.abs(value) / 2 + 1;
+                        //     colorG = colors([0, 255, 0], [0, 0, 255], s).concat(colors([0, 0, 255], [255, 0, 0], s));
+                        // }
+                        // else if (v > 1000) {
+                        //     const s = Math.abs(value) / 4;
+                        //     colorG = colors([0, 255, 0], [0, 255, 255], s)
+                        //         .concat(colors([0, 255, 255], [0, 0, 255], s))
+                        //         .concat(colors([0, 0, 255], [255, 0, 255], s))
+                        //         .concat(colors([255, 0, 255], [255, 0, 0], s));
+                        // }
+                        // else {
+                        //     colorG = colors([0, 255, 0], [255, 0, 0], v + 1);
+                        // }
+                        // retrace
+                        while (true) {
+                            if (x == startX && y == startY) {
+                                break;
+                            }
+                            for (int i = 0; i < 4; i++) {
+                                const int nextX = x + FOUR[i][0];
+                                const int nextY = y + FOUR[i][1];
+                                if (!outOfBound(nextX, nextY) && !maze[x][y].walls[i] && maze[nextX][nextY].value != 0 && abs(maze[nextX][nextY].value) < abs(maze[x][y].value)) {
+                                    maze[x][y].value = abs(maze[x][y].value);
+                                    x = nextX;
+                                    y = nextY;
+                                    break;
+                                }
+                            }
+                        }
+                        return;
+                    }
+                    for (int i = 0; i < 4; i++) {
+                        const int nextX = x + FOUR[i][0];
+                        const int nextY = y + FOUR[i][1];
+                        if (!outOfBound(nextX, nextY) && !maze[x][y].walls[i] && maze[nextX][nextY].value == 0) {
+                            maze[nextX][nextY].value = value + valueDir;
+                        }
+                    }
+                }
+            }
+        }
+        value += valueDir;
+    }
+}
+
 void Maze::update()
 {
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) offsetY += 10;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) offsetY -= 10;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) offsetX += 10;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) offsetX -= 10;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::E)) scale += scale / 10;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) scale -= scale / 10;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) offsetY += 1;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) offsetY -= 1;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) offsetX += 1;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) offsetX -= 1;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::E)) scale += scale / 100;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) scale -= scale / 100;
 }
 
 void Maze::render(sf::RenderWindow* window)
@@ -151,10 +219,18 @@ void Maze::render(sf::RenderWindow* window)
 
 void Maze::renderGrid(sf::Vector2u view, int x, int y, Grid grid, std::vector<sf::Vertex>* vertices)
 {
-    const float sx = offsetX + view.x / 2.0f + x * GRID_SIZE * scale;
-    const float sy = offsetY + view.y / 2.0f + y * GRID_SIZE * scale;
+    const float sx = view.x / 2.0f + (offsetX + x) * GRID_SIZE * scale;
+    const float sy = view.y / 2.0f + (offsetY + y) * GRID_SIZE * scale;
     const float ex = sx + GRID_SIZE * scale;
     const float ey = sy + GRID_SIZE * scale;
+
+    if (grid.value > 0 || (x == startX && y == startY) || (x == endX && y == endY))
+    {
+        vertices->push_back(sf::Vertex(sf::Vector2f(sx, sy)));
+        vertices->push_back(sf::Vertex(sf::Vector2f(ex, ey)));
+        vertices->push_back(sf::Vertex(sf::Vector2f(sx, ey)));
+        vertices->push_back(sf::Vertex(sf::Vector2f(ex, sy)));
+    }
 
     if (grid.walls[0])
     {
