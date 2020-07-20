@@ -27,6 +27,7 @@ public:
     void generate(int x, int y);
     void generate2();
     void path();
+    void path2();
 
     void update();
     void render(sf::RenderWindow* window);

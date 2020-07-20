@@ -4,7 +4,7 @@ int main()
 {
     sf::RenderWindow window(sf::VideoMode(800, 600), "SFML Maze Demo");
 
-    Maze maze(200);
+    Maze maze(100);
 
     while (window.isOpen())
     {
@@ -32,7 +32,7 @@ int main()
                     maze.endX = x;
                     maze.endY = y;
                 }
-                maze.path();
+                maze.path2();
             }
         }
 

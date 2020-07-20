@@ -61,7 +61,7 @@ void Maze::generate(int x, int y)
 {
     maze[x][y].value = 1;
 
-    bool d[4] = {false, false, false, false};
+    bool d[4] = { false, false, false, false };
     while (!d[0] || !d[1] || !d[2] || !d[3])
     {
         const int dir = rand() % 4;
@@ -193,6 +193,65 @@ void Maze::path()
     }
 }
 
+
+void Maze::path2()
+{
+    if (outOfBound(startX, startY) || outOfBound(endX, endY))
+        return;
+
+    for (int x = 0; x < size; x++)
+    {
+        for (int y = 0; y < size; y++)
+        {
+            maze[x][y].value = 0;
+        }
+    }
+
+    const int valueDir = -1;
+    int value = valueDir;
+    maze[startX][startY].value = value;
+    std::vector<sf::Vector2i> heads;
+    std::vector<sf::Vector2i> newHeads;
+    heads.push_back(sf::Vector2i(startX, startY));
+    while (true) {
+        for (int h = 0; h < heads.size(); h++) {
+            int x = heads[h].x;
+            int y = heads[h].y;
+            if (x == endX && y == endY) {
+                // retrace
+                while (true) {
+                    if (x == startX && y == startY) {
+                        break;
+                    }
+                    for (int i = 0; i < 4; i++) {
+                        const int nextX = x + FOUR[i][0];
+                        const int nextY = y + FOUR[i][1];
+                        if (!outOfBound(nextX, nextY) && !maze[x][y].walls[i] && maze[nextX][nextY].value != 0 && abs(maze[nextX][nextY].value) < abs(maze[x][y].value)) {
+                            maze[x][y].value = abs(maze[x][y].value);
+                            x = nextX;
+                            y = nextY;
+                            break;
+                        }
+                    }
+                }
+                return;
+            }
+            for (int i = 0; i < 4; i++) {
+                const int nextX = x + FOUR[i][0];
+                const int nextY = y + FOUR[i][1];
+                if (!outOfBound(nextX, nextY) && !maze[x][y].walls[i] && maze[nextX][nextY].value == 0) {
+                    maze[nextX][nextY].value = value + valueDir;
+                    newHeads.push_back(sf::Vector2i(nextX, nextY));
+                }
+            }
+        }
+        heads.clear();
+        heads.insert(heads.end(), newHeads.begin(), newHeads.end());
+        newHeads.clear();
+        value += valueDir;
+    }
+}
+
 void Maze::update()
 {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) offsetY += 1;
@@ -232,7 +291,7 @@ void Maze::renderGrid(sf::Vector2u view, int x, int y, Grid grid, std::vector<sf
         vertices->push_back(sf::Vertex(sf::Vector2f(ex, sy)));
     }
 
-    if (grid.walls[0])
+    if (y == 0 && grid.walls[0])
     {
         vertices->push_back(sf::Vertex(sf::Vector2f(sx, sy)));
         vertices->push_back(sf::Vertex(sf::Vector2f(ex, sy)));
@@ -244,7 +303,7 @@ void Maze::renderGrid(sf::Vector2u view, int x, int y, Grid grid, std::vector<sf
         vertices->push_back(sf::Vertex(sf::Vector2f(ex, ey)));
     }
 
-    if (grid.walls[2])
+    if (x == 0 && grid.walls[2])
     {
         vertices->push_back(sf::Vertex(sf::Vector2f(sx, sy)));
         vertices->push_back(sf::Vertex(sf::Vector2f(sx, ey)));
